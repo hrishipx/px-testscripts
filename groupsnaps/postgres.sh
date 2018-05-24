@@ -1,3 +1,5 @@
+kubectl delete deployment postgres
+
 cat << eof | kubectl apply -f -
 kind: StorageClass
 apiVersion: storage.k8s.io/v1beta1

@@ -1,6 +1,8 @@
 #!/bin/bash
 
 kubectl create secret generic mysql-pass --from-literal=password=password
+kubectl delete deployment wordpress
+kubectl delete deployment wordpress-mysql 
 
 cat << eof | kubectl apply -f -
 apiVersion: storage.k8s.io/v1beta1
@@ -48,7 +50,7 @@ metadata:
     name: db  
     app: wordpress
   annotations:
-    volume.beta.kubernetes.io/storage-class: portworx-sc-repl3-shared
+    volume.beta.kubernetes.io/storage-class: portworx-sc-repl3-sharedshared
 spec:
   accessModes:
     - ReadWriteMany
