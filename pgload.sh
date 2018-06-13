@@ -1,5 +1,5 @@
 #!/bin/bash
-NUM_NAMESPACES=5
+NUM_NAMESPACES=15
 
 # derived from https://gist.github.com/davejamesmiller/1965569
 ask() {
@@ -53,25 +53,69 @@ show_usage() {
   exit
 }
 
-
-deployPostgres() {
-echo $namespace
-kubectl create ns postgres-$namespace
+setupStorageClasses(){
 
 cat << eof | kubectl apply -f -
 kind: StorageClass
 apiVersion: storage.k8s.io/v1beta1
 metadata:
-    name: px-postgres-sc
+    name: px-postgres-sc-repl3
 provisioner: kubernetes.io/portworx-volume
 parameters:
    repl: "2"
 ---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1beta1
+metadata:
+    name: px-cassandra-sc-repl2
+provisioner: kubernetes.io/portworx-volume
+parameters:
+   repl: "2"
+   priority_io: "high"
+---
+apiVersion: storage.k8s.io/v1beta1
+kind: StorageClass
+metadata:
+  name: portworx-sc-repl3-snap60
+provisioner: kubernetes.io/portworx-volume
+parameters:
+  repl: "3"
+  priority_io: "high"
+  snap_schedule: "60,5"
+---
+apiVersion: storage.k8s.io/v1beta1
+kind: StorageClass
+metadata:
+  name: portworx-sc-repl3-shared-snap60
+provisioner: kubernetes.io/portworx-volume
+parameters:
+  repl: "3"
+  priority_io: "high"
+  shared: "true"
+  snap_schedule: "60,5"
+---
+apiVersion: storage.k8s.io/v1beta1
+kind: StorageClass
+metadata:
+  name: portworx-sc-repl3-shared
+provisioner: kubernetes.io/portworx-volume
+parameters:
+  repl: "3"
+  priority_io: "high"
+  shared: "true"
+---
+eof
+}
+
+
+deployPostgres() {
+
+cat << eof | kubectl apply -f -
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
    name: postgres-data-$namespace
-   namespace: postgres-$namespace
+   namespace: ns-$namespace
    labels:
     tier: prod
     name: db
@@ -89,7 +133,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: postgres-$namespace
-  namespace: postgres-$namespace
+  namespace: ns-$namespace
 spec:
   strategy:
     rollingUpdate:
@@ -137,26 +181,44 @@ spec:
 eof
 }
 
-cleanupPostgres(){
-   kubectl delete ns postgres-$namespace
-}
-
-
-createPostgres(){
-
- echo "Deploying Postgres in $NUM_NAMESPACES" 
+deleteNamespaces(){
  for ((namespace=0; namespace < $NUM_NAMESPACES; namespace++ ))
  do
-  deployPostgres 
+   kubectl delete ns ns-$namespace
  done;
 }
 
-cleanPostgres(){
-  for ((namespace=0; namespace < $NUM_NAMESPACES; namespace++ ))
-  do
-   cleanupPostgres
-  done;
+createNamespaces(){
+ for ((namespace=0; namespace < $NUM_NAMESPACES; namespace++ ))
+ do
+   kubectl create namespace ns-$namespace
+ done;
 }
+
+installApps(){
+  createPostgres
+  createWordpress
+}
+
+setup(){
+  createStorageClasses
+  createNamespaces
+  deployApps
+}
+
+tearDown(){
+  deleteStorageClasses
+  deleteNamespaces
+}
+
+deployApps(){
+
+ for ((namespace=0; namespace < $NUM_NAMESPACES; namespace++ ))
+ do
+  installApps 
+ done;
+}
+
 
 OPTIONS=
 while getopts "n:" opt; do
