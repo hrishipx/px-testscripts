@@ -1,0 +1,57 @@
+kind: StorageClass
+apiVersion: storage.k8s.io/v1beta1
+metadata:
+    name: px-postgres-sc-repl3
+provisioner: kubernetes.io/portworx-volume
+parameters:
+   repl: "2"
+---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1beta1
+metadata:
+    name: px-cassandra-sc-repl2
+provisioner: kubernetes.io/portworx-volume
+parameters:
+   repl: "2"
+   priority_io: "high"
+---
+apiVersion: storage.k8s.io/v1beta1
+kind: StorageClass
+metadata:
+  name: portworx-sc-repl3-snap60
+provisioner: kubernetes.io/portworx-volume
+parameters:
+  repl: "3"
+  priority_io: "high"
+  snap_schedule: "60,5"
+---
+apiVersion: storage.k8s.io/v1beta1
+kind: StorageClass
+metadata:
+  name: portworx-sc-repl3
+provisioner: kubernetes.io/portworx-volume
+parameters:
+  repl: "3"
+  priority_io: "high"
+---
+apiVersion: storage.k8s.io/v1beta1
+kind: StorageClass
+metadata:
+  name: portworx-sc-repl3-shared-snap60
+provisioner: kubernetes.io/portworx-volume
+parameters:
+  repl: "3"
+  priority_io: "high"
+  shared: "true"
+  snap_schedule: "60,5"
+---
+apiVersion: storage.k8s.io/v1beta1
+kind: StorageClass
+metadata:
+  name: portworx-sc-repl3-shared
+provisioner: kubernetes.io/portworx-volume
+parameters:
+  repl: "3"
+  priority_io: "high"
+  shared: "true"
+---
