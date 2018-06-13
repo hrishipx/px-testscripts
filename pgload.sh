@@ -1,28 +1,5 @@
 #!/bin/bash
-
-
-POSTGRES_NAMESPACE=
-TALISMAN_TAG=latest
-WIPE_CLUSTER="--wipecluster"
-MAX_RETRIES=60
-TIME_BEFORE_RETRY=5 #seconds
-JOB_NAME=talisman
-
-usage()
-{
-	echo "
-	usage:  curl https://install.portworx.com/px-wipe | bash -s [-- [-S | --skipmetadata] ]
-	examples:
-            # Along with deleting Portworx Kubernetes components, also wipe Portworx cluster metadata
-            curl https://install.portworx.com/px-wipe | bash -s -- --skipmetadata
-      "
-}
-
-fatal() {
-  echo "" 2>&1
-  echo "$@" 2>&1
-  exit 1
-}
+NUM_NAMESPACES=5
 
 # derived from https://gist.github.com/davejamesmiller/1965569
 ask() {
@@ -61,7 +38,25 @@ ask() {
   esac
 }
 
-kubectl delete deployment postgres-${NAMESPACE} -n ${NAMESPACE}
+show_usage() {
+
+  echo ""
+  echo "Setup Postgres on the cluster"
+  echo ""
+  echo "Options:"
+  echo "         -n <number>        Number of namespaces to create and deploy postgres on"
+  echo "  "
+  echo "Commands:"
+  echo "          create               Install a Postgres statefulset on the Kubernetes cluster."
+  echo "          clean          Cleanup Postgres statefulset on the cluster."
+   
+  exit
+}
+
+
+deployPostgres() {
+echo $namespace
+kubectl create ns postgres-$namespace
 
 cat << eof | kubectl apply -f -
 kind: StorageClass
@@ -75,12 +70,12 @@ parameters:
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-   name: postgres-data-${NAMESPACE}
-   namespace: ${NAMESPACE}
+   name: postgres-data-$namespace
+   namespace: postgres-$namespace
    labels:
     tier: prod
     name: db
-    app: postgres
+    app: postgres-$namespace
    annotations:
      volume.beta.kubernetes.io/storage-class: px-postgres-sc
 spec:
@@ -93,8 +88,8 @@ spec:
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: postgres-${NAMESPACE}
-  namespace: ${NAMESPACE}
+  name: postgres-$namespace
+  namespace: postgres-$namespace
 spec:
   strategy:
     rollingUpdate:
@@ -105,7 +100,7 @@ spec:
   template:
     metadata:
       labels:
-        app: postgres-${NAMESPACE}
+        app: postgres-$namespace
     spec:
       schedulerName: stork    
       affinity:
@@ -138,5 +133,63 @@ spec:
       volumes:
       - name: postgredb
         persistentVolumeClaim:
-          claimName: postgres-data-${NAMESPACE}
+          claimName: postgres-data-$namespace
 eof
+}
+
+cleanupPostgres(){
+   kubectl delete ns postgres-$namespace
+}
+
+
+createPostgres(){
+
+ echo "Deploying Postgres in $NUM_NAMESPACES" 
+ for ((namespace=0; namespace < $NUM_NAMESPACES; namespace++ ))
+ do
+  deployPostgres 
+ done;
+}
+
+cleanPostgres(){
+  for ((namespace=0; namespace < $NUM_NAMESPACES; namespace++ ))
+  do
+   cleanupPostgres
+  done;
+}
+
+OPTIONS=
+while getopts "n:" opt; do
+  case $opt in
+  n ) NUM_NAMESPACES="$OPTARG";; 
+  \? ) show_usage;;
+  esac
+done
+
+shift "$((OPTIND-1))"
+if [ $# -lt 1 ]; then 
+        echo "?specify create or cleanup command"
+        show_usage
+fi
+
+case "$1" in
+        create)
+                COMMAND=$1
+                ;;
+        clean)
+                COMMAND=$1
+                ;;
+        *)
+                echo "?Invalid command $1"
+                show_usage
+                ;;
+esac
+
+case "$COMMAND" in
+        create)
+             createPostgres
+        ;;
+        clean)
+             cleanPostgres
+        ;;
+esac
