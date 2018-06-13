@@ -55,12 +55,12 @@ show_usage() {
 
 setupStorageClasses(){
   echo "Create Storageclasses...."
-  ./storageclasses.sh create
+  groupsnaps/sc/storageclasses.sh create
 }
 
 deleteStorageClasses(){
   echo "Cleanup Storageclasses....."
-  ./sc/storageClasses.sh cleanup
+  groupsnaps/sc/storageClasses.sh cleanup
 }
 
 
@@ -84,26 +84,25 @@ installApps(){
 }
 createPostgres() {
      echo "Deploying Postgres... in ns-$namespace"
-    ./postgres/postgres.sh ns-$namespace
+    groupsnaps/postgres/postgres.sh ns-$namespace
 }
 
 createWordpress(){
     echo "Deploying Wordpress... in ns-$namespace"
-   ./wordpress/wordpress.sh ns-$namespace
+   groupsnaps/wordpress/wordpress.sh ns-$namespace
 }
 setup(){
-  createStorageClasses
+  setupStorageClasses
   createNamespaces
   deployApps
 }
 
-tearDown(){
+teardown(){
   deleteStorageClasses
   deleteNamespaces
 }
 
 deployApps(){
-
  for ((namespace=0; namespace < $NUM_NAMESPACES; namespace++ ))
  do
   installApps 
@@ -140,9 +139,9 @@ esac
 
 case "$COMMAND" in
         create)
-             createPostgres
+             setup
         ;;
         clean)
-             cleanPostgres
+             teardown
         ;;
 esac
