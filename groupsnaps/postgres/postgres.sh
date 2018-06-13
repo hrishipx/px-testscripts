@@ -18,7 +18,7 @@ metadata:
     name: db
     app: postgres
    annotations:
-     volume.beta.kubernetes.io/storage-class: px-postgres-sc-repl3
+     volume.beta.kubernetes.io/storage-class: px-postgres-sc-repl3-snap90
 spec:
    accessModes:
      - ReadWriteOnce
