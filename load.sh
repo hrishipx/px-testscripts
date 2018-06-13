@@ -55,7 +55,7 @@ show_usage() {
 
 setupStorageClasses(){
   echo "Create Storageclasses...."
-  groupsnaps/sc/storageclasses.sh create
+  groupsnaps/sc/storageClasses.sh create
 }
 
 deleteStorageClasses(){
@@ -80,7 +80,7 @@ createNamespaces(){
 
 installApps(){
   createPostgres
-  #createWordpress
+  createWordpress
 }
 createPostgres() {
      echo "Deploying Postgres... in ns-$namespace"

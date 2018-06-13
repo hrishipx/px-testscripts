@@ -106,7 +106,6 @@ metadata:
 spec:
   ports:
     - port: 80
-      nodePort: 30303
   selector:
     app: wordpress
     tier: frontend

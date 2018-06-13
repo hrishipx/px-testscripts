@@ -1,11 +1,13 @@
 #!/bin/bash
 
 createSc() {
-  kubectl apply -f sc.yaml
+ echo $(pwd)  
+kubectl apply -f groupsnaps/sc/sc.yaml
 }
 
 deleteSC() {
-  kubectl delete -f sc.yaml
+  echo $(pwd)
+  kubectl delete -f groupsnaps/sc/sc.yaml
 }
 
 case "$1" in
@@ -25,7 +27,7 @@ case "$COMMAND" in
         create)
              createSc
         ;;
-        clean)
+        cleanup)
              deleteSC
         ;;
 esac
